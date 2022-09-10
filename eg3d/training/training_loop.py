@@ -167,7 +167,9 @@ def training_loop(
             resume_data = legacy.load_network_pkl(f)
         for name, module in [('G', G), ('D', D), ('G_ema', G_ema)]:
             misc.copy_params_and_buffers(resume_data[name], module, require_all=False)
-
+            if name == 'G' or name == 'G_ema':
+                module.neural_rendering_resolution = resume_data[name].neural_rendering_resolution
+    
     # Print network summary tables.
     if rank == 0:
         z = torch.empty([batch_gpu, G.z_dim], device=device)
