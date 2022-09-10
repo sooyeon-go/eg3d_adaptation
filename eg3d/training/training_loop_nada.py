@@ -185,19 +185,11 @@ def training_loop(
         print(f'Resuming from "{resume_pkl}"')
         with dnnlib.util.open_url(resume_pkl) as f:
             resume_data = legacy.load_network_pkl(f)
-        G_new = TriPlaneGenerator(*G.init_args, **G.init_kwargs).eval().requires_grad_(False).to(device)
         for name, module in [('G', G), ('D', D), ('G_ema', G_ema)]:
             misc.copy_params_and_buffers(resume_data[name], module, require_all=False)
-            if name == 'G_ema':
-                from training.pdbutil import ForkedPdb
-                #ForkedPdb().set_trace()
-                G_tmp = resume_data['G_ema'].to(device) # type: ignore
-
-                #ForkedPdb().set_trace()
-                misc.copy_params_and_buffers(G_tmp, G_new, require_all=False)
-                G_new.neural_rendering_resolution = G_ema.neural_rendering_resolution
-                G_new.rendering_kwargs = G_ema.rendering_kwargs
-                G_ema = G_new
+            if name == 'G' or name == 'G_ema':
+                module.neural_rendering_resolution = resume_data[name].neural_rendering_resolution
+    
 
     # Print network summary tables.
     if rank == 0:
